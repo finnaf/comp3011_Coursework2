@@ -1,13 +1,14 @@
 import sys
 from crawler import Crawler
 from indexer import Indexer
+from search import SearchEngine
 
 def main():
     crawler = Crawler("https://quotes.toscrape.com/")
     indexer = Indexer()
 
     print("COMP3011 Coursework 2 - Web Crawler")
-    print("Available commands: build, load, print <word>, find <query>, exit")
+    print("Commands: build, load, print <word>, find <query>, quit")
 
     while True:
         try:
@@ -38,7 +39,8 @@ def main():
                     continue
                 
                 word = args[0].lower()
-                # Requirements: print the inverted index for a particular word
+
+                # print inverted index for a given word
                 if word in indexer.index:
                     print(f"Inverted index for '{word}':")
                     for url, count in indexer.index[word].items():
@@ -47,15 +49,26 @@ def main():
                     print(f"Word '{word}' not found in index.")
 
             elif command == "find":
-                # Placeholder for the find logic (multi-word queries)[cite: 1]
                 if not args:
                     print("Usage: find <query phrase>")
                     continue
-                print(f"Searching for: {' '.join(args)}...")
-                # We will implement the specific search logic in the next step
                 
-            elif command == "exit":
-                print("Exiting search tool.")
+                if not indexer.index:
+                    print("Error: Index not loaded. Please 'load' or 'build' first.")
+                    continue
+
+                searcher = SearchEngine(indexer.index)
+                results = searcher.find(args)
+
+                if results:
+                    print(f"Found {len(results)} page(s) containing all terms:")
+                    for url, score in results:
+                        print(f" - {url} (Relevance Score: {score})")
+                else:
+                    print("No pages found for that query.")
+                
+            elif command == "quit" or command == "exit" or command == "q":
+                print("Exiting search tool")
                 break
 
             else:

@@ -43,7 +43,6 @@ class Indexer:
         if os.path.exists(self.storage_path):
             with open(self.storage_path, 'r') as f:
                 self.index = json.load(f)
-            print("Index loaded successfully.")
             return True
         
         print("Error: Index file not found. Run 'build' first.")

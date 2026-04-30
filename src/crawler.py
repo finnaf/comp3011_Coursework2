@@ -61,6 +61,12 @@ class Crawler:
                 full_url = urllib.parse.urljoin(self.base_url, link)
                 if self.base_url in full_url and full_url not in self.visited:
                     self._visit_page(full_url)
+
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to fetch {url}: {e}")
+            # Don't add to self.pages_data
+            # But keep it in self.visited so we don't infinitely retry a broken link
+            return
                     
         except requests.exceptions.RequestException as e:
             print(f"Failed to fetch {url}: {e}")
