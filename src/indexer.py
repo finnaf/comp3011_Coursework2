@@ -3,7 +3,7 @@ import re
 import os
 
 class Indexer:
-    def __init__(self, storage_path="data/index.json"):
+    def __init__(self, storage_path="../data/index.json"):
         self.index = {}
         self.storage_path = storage_path
 

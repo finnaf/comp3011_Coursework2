@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import urllib.parse
+from urllib import parse, robotparser
 
 class PoliteTimer:
     def __init__(self, delay):
@@ -23,14 +24,17 @@ class PoliteTimer:
 
 
 class Crawler:
-    def __init__(self, base_url):
+    def __init__(self, base_url="https://quotes.toscrape.com/"):
         self.base_url = base_url
         self.visited = set()
         self.pages_data = []  # Stores (url, text_content)
         self.politeness_timer = PoliteTimer(6)
+        self.robot_parser = robotparser.RobotFileParser()
 
     def crawl(self):
-        """ Starts crawling from the base URL"""
+        """Starts crawling from the base URL"""
+        self._parse_robots()
+
         self._visit_page(self.base_url)
         return self.pages_data
 
@@ -39,6 +43,9 @@ class Crawler:
             return
         
         self.visited.add(url)
+
+        if not self.robot_parser.can_fetch("*", url):
+            return
         
         try:
             self.politeness_timer.wait()
@@ -70,6 +77,10 @@ class Crawler:
                     
         except requests.exceptions.RequestException as e:
             print(f"Failed to fetch {url}: {e}")
+
+    def _parse_robots(self):
+        self.robot_parser.set_url(self.base_url + "/robots.txt")
+        self.robot_parser.read()
 
 if __name__ == "__main__":
     crawler = Crawler()
