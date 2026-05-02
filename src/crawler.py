@@ -27,7 +27,7 @@ class Crawler:
     def __init__(self, base_url="https://quotes.toscrape.com/"):
         self.base_url = base_url
         self.visited = set()
-        self.pages_data = []  # Stores (url, text_content)
+        self.pages_data = []  # stores (url, text_content)
         self.politeness_timer = PoliteTimer(6)
         self.robot_parser = robotparser.RobotFileParser()
 
@@ -74,13 +74,20 @@ class Crawler:
             # Don't add to self.pages_data
             # But keep it in self.visited so we don't infinitely retry a broken link
             return
-                    
-        except requests.exceptions.RequestException as e:
-            print(f"Failed to fetch {url}: {e}")
 
     def _parse_robots(self):
-        self.robot_parser.set_url(self.base_url + "/robots.txt")
-        self.robot_parser.read()
+        robots_url = urllib.parse.urljoin(self.base_url, "/robots.txt")
+
+        try:
+            self.robot_parser.set_url(robots_url)
+            self.robot_parser.read()
+
+            delay = self.robot_parser.crawl_delay("*")
+            if delay and delay > 6:
+                self.politeness_timer.delay = delay
+
+        except Exception as e:
+            print(f"Could not parse robots.txt: {e}")
 
 if __name__ == "__main__":
     crawler = Crawler()
