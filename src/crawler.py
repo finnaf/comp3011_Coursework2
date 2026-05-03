@@ -1,7 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
 import time
-import urllib.parse
 from urllib import parse, robotparser
 
 class PoliteTimer:
@@ -30,22 +29,24 @@ class Crawler:
         self.pages_data = []  # stores (url, text_content)
         self.politeness_timer = PoliteTimer(6)
         self.robot_parser = robotparser.RobotFileParser()
+        self.base_netloc = parse.urlparse(base_url).netloc
 
     def crawl(self):
         """Starts crawling from the base URL"""
         self._parse_robots()
 
-        self._visit_page(self.base_url)
+        try:
+            self._visit_page(self.base_url)
+        except KeyboardInterrupt:
+            print(f"\nCrawl interrupted. {len(self.pages_data)} pages collected.")
+
         return self.pages_data
 
     def _visit_page(self, url):
-        if url in self.visited:
+        if url in self.visited or not self.robot_parser.can_fetch("*", url):
             return
         
         self.visited.add(url)
-
-        if not self.robot_parser.can_fetch("*", url):
-            return
         
         try:
             self.politeness_timer.wait()
@@ -64,9 +65,10 @@ class Crawler:
             for a_tag in soup.find_all('a', href=True):
                 link = a_tag['href']
 
-                # handle relative URLs (and stay on base domain)
-                full_url = urllib.parse.urljoin(self.base_url, link)
-                if self.base_url in full_url and full_url not in self.visited:
+                # handle relative URLs safely
+                full_url = parse.urljoin(self.base_url, link)
+                full_netloc = parse.urlparse(full_url).netloc
+                if self.base_netloc == full_netloc and full_url not in self.visited:
                     self._visit_page(full_url)
 
         except requests.exceptions.RequestException as e:
@@ -76,7 +78,7 @@ class Crawler:
             return
 
     def _parse_robots(self):
-        robots_url = urllib.parse.urljoin(self.base_url, "/robots.txt")
+        robots_url = parse.urljoin(self.base_url, "/robots.txt")
 
         try:
             self.robot_parser.set_url(robots_url)

@@ -3,12 +3,15 @@ from crawler import Crawler
 from indexer import Indexer
 from search import SearchEngine
 
+def print_help():
+    print("COMP3011 Coursework 2 - Web Crawler")
+    print("Commands: build, load, print <word>, find <query>, quit")
+
 def main():
     crawler = Crawler("https://quotes.toscrape.com/")
     indexer = Indexer()
 
-    print("COMP3011 Coursework 2 - Web Crawler")
-    print("Commands: build, load, print <word>, find <query>, quit")
+    print_help()
 
     while True:
         try:
@@ -28,9 +31,7 @@ def main():
                 print(f"Build complete. {len(pages_data)} pages indexed.")
 
             elif command == "load":
-                # load index from file system
-                success = indexer.load()
-                if success:
+                if indexer.load():
                     print("Index loaded and ready for searching.")
 
             elif command == "print":
@@ -71,11 +72,17 @@ def main():
                 print("Exiting search tool")
                 break
 
+            elif command == "help":
+                print_help()
+
             else:
                 print(f"Unknown command: {command}")
-
+        
         except KeyboardInterrupt:
-            print("\nUse 'exit' to quit.")
+            break
+        except EOFError:
+            # input interrupted by ctrl+c
+            break
         except Exception as e:
             print(f"An error occurred: {e}")
 
