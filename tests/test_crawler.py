@@ -9,7 +9,7 @@ class TestCrawler(unittest.TestCase):
     '''
     def setUp(self):
         # fake base url
-        self.crawler = Crawler("https://example.com")
+        self.crawler = Crawler("https://example.com/")
 
         # defaults for all tests
         self.crawler.robot_parser = MagicMock()
@@ -80,11 +80,11 @@ class TestCrawler(unittest.TestCase):
         self.crawler._visit_page("https://example.com")
 
         visited = self.crawler.visited
-        self.assertIn("https://example.com", visited)
+        self.assertIn("https://example.com/", visited)
         self.assertIn("https://example.com/internal", visited)
         self.assertNotIn("https://other.com/page", visited)
         self.assertNotIn("https://evil.com/steal", visited)
-        self.assertNotIn("https://example.com.evil.com", visited)
+        self.assertNotIn("https://example.com.evil.com/", visited)
 
     @patch('src.crawler.requests.get')
     def test_failed_request_handling(self, mock_get):
@@ -102,10 +102,10 @@ class TestCrawler(unittest.TestCase):
 
         self.crawler._visit_page("https://example.com")
 
-        self.assertIn("https://example.com", self.crawler.visited)
+        self.assertIn("https://example.com/", self.crawler.visited)
         self.assertIn("https://example.com/broken", self.crawler.visited)
         self.assertEqual(len(self.crawler.pages_data), 1)
-        self.assertEqual(self.crawler.pages_data[0]["url"], "https://example.com")
+        self.assertEqual(self.crawler.pages_data[0]["url"], "https://example.com/")
 
 
     @patch('src.crawler.requests.get')
@@ -124,7 +124,7 @@ class TestCrawler(unittest.TestCase):
         entry = self.crawler.pages_data[0]
         self.assertIn("url", entry)
         self.assertIn("content", entry)
-        self.assertEqual(entry["url"], "https://example.com")
+        self.assertEqual(entry["url"], "https://example.com/")
         self.assertIn("Hello", entry["content"])
         self.assertIn("Some", entry["content"])
         self.assertIn("content", entry["content"])
