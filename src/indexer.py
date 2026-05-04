@@ -10,10 +10,6 @@ class Indexer:
         self.doc_lengths = {}
         self.storage_path = storage_path
 
-    def get_url(self, url_id):
-        """Helper to look up a URL by its integer ID."""
-        return self.id_to_url.get(url_id)
-
     def _get_url_id(self, url):
         """Returns existing ID for a URL, or assigns a new one."""
         if url not in self.url_vocab:
@@ -72,7 +68,7 @@ class Indexer:
             
             # convert doc_lengths keys back to integers
             self.doc_lengths = {int(uid): length for uid, length in data["doc_lengths"].items()}
-            
+
             self.index = {}
             for word, postings in data["index"].items():
                 self.index[word] = {int(uid): pos_list for uid, pos_list in postings.items()}
@@ -81,3 +77,15 @@ class Indexer:
         
         print("Error: Index file not found. Run 'build' first.")
         return False
+    
+    def get_word_stats(self, word, reverse=False, top=None):
+        """Returns a sorted list of (url, frequency) for a given word."""
+        if word not in self.index:
+            return None
+        
+        stats = [
+            (self.id_to_url[int(uid)], len(pos)) 
+            for uid, pos in self.index[word].items()
+        ]
+        stats.sort(key=lambda x: x[1], reverse=not reverse)
+        return stats[:top]

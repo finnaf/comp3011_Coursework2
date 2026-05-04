@@ -1,4 +1,3 @@
-import sys
 from crawler import Crawler
 from indexer import Indexer
 from search import SearchEngine
@@ -100,20 +99,14 @@ def main():
                     continue
                 
                 word = positional[0].lower()
-                if word in indexer.index:
-                    entries = sorted(
-                        [(indexer.id_to_url[int(uid)], len(pos)) for uid, pos in indexer.index[word].items()],
-                        key=lambda x: x[1], 
-                        reverse=not flags["--reverse"]
-                    )[:flags.get("--top")]
-
-                    print(f"Inverted index of {len(entries)} entries for '{word}':")
-
-                    max_url_len = max(len(url) for url, _ in entries)
-                    for url, count in entries:
+                results = indexer.get_word_stats(word, flags["--reverse"], flags.get("--top"))
+                if results:
+                    max_url_len = max(len(url) for url, _ in results)
+                    for url, count in results:
                         print(f" - {url:<{max_url_len + 1}} Frequency: {count}")
                 else:
                     print(f"Word '{word}' not found in index.")
+                    
 
             elif command == "find":
                 positional, flags = parse_flags(args, {"--top"}, {"--reverse"})
