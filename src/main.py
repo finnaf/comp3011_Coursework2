@@ -17,22 +17,29 @@ def print_help():
         help                    Show this help message
         quit                    Exit the program
     Flags:
-        find --top <n>      Show only top n results (default: None)
+        find --top <n>          Show only top n results (default: None)
+        print/find --reverse    Reverses the sorting order
     """
     print(help_text.strip())
 
-def parse_flags(args, valid_flags):
+def parse_flags(args, value_flags, bool_flags):
     """
     Separates positional args from flags.
     valid_flags: dict of flag_name & default_value, e.g. {"--top": 10}
     Returns (positional_args, flag_values)
     """
     positional = []
-    flags = dict(valid_flags)
+    flags = dict(value_flags)
+    bool_flags = bool_flags or set()
+    for f in bool_flags:
+        flags[f] = False # default off
 
     i = 0
     while i < len(args):
-        if args[i] in valid_flags:
+        if args[i] in bool_flags:
+            flags[args[i]] = True
+            i += 1
+        elif args[i] in value_flags:
             flag = args[i]
             if i + 1 >= len(args):
                 print(f"Error: Flag '{flag}' requires a value.")
@@ -79,10 +86,10 @@ def main():
 
             elif command == "load":
                 if indexer.load():
-                    print("Index loaded and ready for searching.")
+                    print("Index loaded successfully")
 
             elif command == "print":
-                positional, flags = parse_flags(args, {})
+                positional, flags = parse_flags(args, {}, {"--reverse"})
                 if flags is None:
                     continue
                 if not positional:
@@ -96,14 +103,17 @@ def main():
 
                 # print inverted index for a given word
                 if word in indexer.index:
+                    entries = list(indexer.index[word].items())
+                    entries.sort(key=lambda x: x[1], reverse=not flags["--reverse"])
+
                     print(f"Inverted index for '{word}':")
-                    for url, count in indexer.index[word].items():
+                    for url, count in entries:
                         print(f" - {url}: (frequency: {count})")
                 else:
                     print(f"Word '{word}' not found in index.")
 
             elif command == "find":
-                positional, flags = parse_flags(args, {"--top": None})
+                positional, flags = parse_flags(args, {"--top": None}, {"--reverse"})
                 if flags is None:
                     continue
                 if not positional:
@@ -115,6 +125,8 @@ def main():
 
                 searcher = SearchEngine(indexer.index, indexer.doc_lengths)
                 results = searcher.find(positional)
+                if flags["--reverse"]:
+                    results.reverse()
 
                 if results:
                     results = results[:flags["--top"]]
