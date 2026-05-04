@@ -43,12 +43,28 @@ class Crawler:
         return self.pages_data
     
     def _normalise_url(self, url):
-        # Remove trailing /page/1/ since it's the same as the root
-        url = re.sub(r'/page/1/?$', '/', url)
-        # Remove trailing slash inconsistencies (keep one canonical form)
+        '''
+        Standardise the URL\n
+        URL normalisation should be handled differently for different websites, for https://quotes.toscrape.com:\n
+        /tag/books/ and /tag/books/page/1/ hold the same content, so they are treated as equivalent
+        '''
         parsed = parse.urlparse(url)
-        normalised = parse.urlunparse(parsed._replace(fragment=''))  # strip #anchors too
-        return normalised.rstrip('/') + '/'
+
+        # remove trailing slash (not for the root)
+        path = parsed.path.rstrip('/') or '/'
+
+        # treat /page/1/ as the same as the base paginated path
+        path = re.sub(r'/page/1/?$', '/', path).rstrip('/') or '/'
+    
+        # drop empty query strings and fragments
+        return parse.urlunparse((
+            parsed.scheme,
+            parsed.netloc,
+            path,
+            '',   # params
+            '',   # query (ignore ?q= style URLs)
+            ''    # fragment
+        ))
 
     def _visit_page(self, url):
         url = self._normalise_url(url)

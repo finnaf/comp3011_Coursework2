@@ -9,7 +9,7 @@ class TestCrawler(unittest.TestCase):
     '''
     def setUp(self):
         # fake base url
-        self.crawler = Crawler("https://example.com/")
+        self.crawler = Crawler("https://example.com")
 
         # defaults for all tests
         self.crawler.robot_parser = MagicMock()
@@ -37,7 +37,7 @@ class TestCrawler(unittest.TestCase):
         mock_response.raise_for_status = MagicMock()
         mock_get.return_value = mock_response
 
-        self.crawler._visit_page("https://example.com/")
+        self.crawler._visit_page("https://example.com")
         self.assertIn("https://example.com/page1", self.crawler.visited)
 
     @patch('src.crawler.requests.get')
@@ -67,7 +67,7 @@ class TestCrawler(unittest.TestCase):
             <a href="/internal">Internal</a>
             <a href="https://other.com/page">External</a>
             <a href="https://evil.com/steal">Another External</a>
-            <a href="https://example.com.evil.com/">Spoofed</a>
+            <a href="https://example.com.evil.com">Spoofed</a>
         '''
 
         no_links = MagicMock()
@@ -77,14 +77,14 @@ class TestCrawler(unittest.TestCase):
 
         mock_get.side_effect = [page_with_links, no_links]
 
-        self.crawler._visit_page("https://example.com/")
+        self.crawler._visit_page("https://example.com")
 
         visited = self.crawler.visited
-        self.assertIn("https://example.com/", visited)
+        self.assertIn("https://example.com", visited)
         self.assertIn("https://example.com/internal", visited)
         self.assertNotIn("https://other.com/page", visited)
         self.assertNotIn("https://evil.com/steal", visited)
-        self.assertNotIn("https://example.com.evil.com/", visited)
+        self.assertNotIn("https://example.com.evil.com", visited)
 
     @patch('src.crawler.requests.get')
     def test_failed_request_handling(self, mock_get):
@@ -100,12 +100,12 @@ class TestCrawler(unittest.TestCase):
             requests.exceptions.RequestException("Connection failed")
         ]
 
-        self.crawler._visit_page("https://example.com/")
+        self.crawler._visit_page("https://example.com")
 
-        self.assertIn("https://example.com/", self.crawler.visited)
+        self.assertIn("https://example.com", self.crawler.visited)
         self.assertIn("https://example.com/broken", self.crawler.visited)
         self.assertEqual(len(self.crawler.pages_data), 1)
-        self.assertEqual(self.crawler.pages_data[0]["url"], "https://example.com/")
+        self.assertEqual(self.crawler.pages_data[0]["url"], "https://example.com")
 
 
     @patch('src.crawler.requests.get')
@@ -117,14 +117,32 @@ class TestCrawler(unittest.TestCase):
         mock_response.raise_for_status = MagicMock()
         mock_get.return_value = mock_response
 
-        self.crawler._visit_page("https://example.com/")
+        self.crawler._visit_page("https://example.com")
 
         self.assertEqual(len(self.crawler.pages_data), 1)
 
         entry = self.crawler.pages_data[0]
         self.assertIn("url", entry)
         self.assertIn("content", entry)
-        self.assertEqual(entry["url"], "https://example.com/")
+        self.assertEqual(entry["url"], "https://example.com")
         self.assertIn("Hello", entry["content"])
         self.assertIn("Some", entry["content"])
         self.assertIn("content", entry["content"])
+
+@patch('src.crawler.requests.get')
+def test_url_normalisation(self, mock_get):
+    """Verify that equivalent URLs are not crawled twice"""
+    no_links = MagicMock()
+    no_links.status_code = 200
+    no_links.raise_for_status = MagicMock()
+    no_links.text = '<p>no links</p>'
+    mock_get.return_value = no_links
+
+    self.crawler._visit_page("https://example.com/tag/books/")
+    self.crawler._visit_page("https://example.com/tag/books/page/1/")
+    self.crawler._visit_page("https://example.com/tag/books")
+    self.crawler._visit_page("https://example.com/tag/books?")
+
+    # all four should be treated as the same page
+    mock_get.assert_called_once()
+    self.assertEqual(len(self.crawler.pages_data), 1)

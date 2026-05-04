@@ -66,12 +66,9 @@ def main():
             args = user_input[1:]
 
             if command == "build":
-                _, flags = parse_flags(args, {"--depth", None}, {"--limit": None})
+                _, flags = parse_flags(args, {})
                 if flags is None: # error in parsing
                     continue
-
-                depth = flags["--depth"]
-                limit = flags["--limit"]
 
                 print(f"Building index of {crawler.base_url}")
                 pages_data = crawler.crawl()
