@@ -1,10 +1,14 @@
+import math
+
 class SearchEngine:
-    def __init__(self, index):
+    def __init__(self, index, doc_lengths):
         """
         Initializes with the inverted index dictionary:
         { "word": { "url1": count, "url2": count } }
         """
         self.index = index
+        self.doc_lengths = doc_lengths # { url: total_word_count }
+        self.total_docs = len(doc_lengths)
 
     def find(self, query_terms):
         """
@@ -26,19 +30,21 @@ class SearchEngine:
         # intersect with URL sets of the remaining words
         for term in query_terms[1:]:
             if term in self.index:
-                word_urls = set(self.index[term].keys())
-                result_urls = result_urls.intersection(word_urls)
+                result_urls &= set(self.index[term].keys())
             else:
-                # if any word in the query doesn't exist, the intersection is empty
                 return []
-
-        # rank results by total frequency
+            
+        # score each url with TF-IDF
         ranked_results = []
         for url in result_urls:
-            total_score = sum(self.index[term][url] for term in query_terms)
-            ranked_results.append((url, total_score))
+            score = 0.0
+            for term in query_terms:
+                tf = self.index[term][url] / self.doc_lengths[url]
+                docs_with_term = len(self.index[term])
+                idf = math.log(self.total_docs / (1 + docs_with_term))
+                score += tf * idf
+            ranked_results.append((url, round(score, 4)))
 
-        # highest frequency first
+        # highest first
         ranked_results.sort(key=lambda x: x[1], reverse=True)
-        
         return ranked_results

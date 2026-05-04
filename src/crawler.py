@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-import time
+import time, re
 from urllib import parse, robotparser
 
 class PoliteTimer:
@@ -41,8 +41,17 @@ class Crawler:
             print(f"\nCrawl interrupted. {len(self.pages_data)} pages collected.")
 
         return self.pages_data
+    
+    def _normalise_url(self, url):
+        # Remove trailing /page/1/ since it's the same as the root
+        url = re.sub(r'/page/1/?$', '/', url)
+        # Remove trailing slash inconsistencies (keep one canonical form)
+        parsed = parse.urlparse(url)
+        normalised = parse.urlunparse(parsed._replace(fragment=''))  # strip #anchors too
+        return normalised.rstrip('/') + '/'
 
     def _visit_page(self, url):
+        url = self._normalise_url(url)
         if url in self.visited or not self.robot_parser.can_fetch("*", url):
             return
         
