@@ -10,26 +10,26 @@ def print_help():
     help_text = """
     Usage: [command] [arguments]
     Commands:
-        build                   Crawl the base URL and build the inverted index
-        load                    Load an existing index from disk
-        print <word>            Show the inverted index entry for a given word
-        find <query>            Search for pages matching all terms in the query
-        help                    Show this help message
-        quit                    Exit the program
+        build           Crawl the base URL and build the inverted index
+        load            Load an existing index from disk
+        print <word>    Show the inverted index entry for a given word
+        find <query>    Search for pages matching all terms in the query
+        help            Show this help message
+        quit            Exit the program
     Flags:
-        find --top <n>          Show only top n results (default: None)
-        print/find --reverse    Reverses the sorting order
+        --top <n>       Show only top n results (print/find)
+        --reverse       Reverses the sorting order (print/find)
     """
     print(help_text.strip())
 
 def parse_flags(args, value_flags, bool_flags):
     """
-    Separates positional args from flags.
-    valid_flags: dict of flag_name & default_value, e.g. {"--top": 10}
+    Separates positional args from flags.\n
+    value flags take values, bool flags do not\n
     Returns (positional_args, flag_values)
     """
     positional = []
-    flags = dict(value_flags)
+    flags = {}
     bool_flags = bool_flags or set()
     for f in bool_flags:
         flags[f] = False # default off
@@ -73,7 +73,7 @@ def main():
             args = user_input[1:]
 
             if command == "build":
-                _, flags = parse_flags(args, {})
+                _, flags = parse_flags(args, {}, {})
                 if flags is None: # error in parsing
                     continue
 
@@ -89,7 +89,7 @@ def main():
                     print("Index loaded successfully")
 
             elif command == "print":
-                positional, flags = parse_flags(args, {}, {"--reverse"})
+                positional, flags = parse_flags(args, {"--top"}, {"--reverse"})
                 if flags is None:
                     continue
                 if not positional:
@@ -100,20 +100,23 @@ def main():
                     continue
                 
                 word = positional[0].lower()
-
-                # print inverted index for a given word
                 if word in indexer.index:
-                    entries = list(indexer.index[word].items())
-                    entries.sort(key=lambda x: x[1], reverse=not flags["--reverse"])
+                    entries = sorted(
+                        [(indexer.id_to_url[int(uid)], len(pos)) for uid, pos in indexer.index[word].items()],
+                        key=lambda x: x[1], 
+                        reverse=not flags["--reverse"]
+                    )[:flags.get("--top")]
 
-                    print(f"Inverted index for '{word}':")
+                    print(f"Inverted index of {len(entries)} entries for '{word}':")
+
+                    max_url_len = max(len(url) for url, _ in entries)
                     for url, count in entries:
-                        print(f" - {url}: (frequency: {count})")
+                        print(f" - {url:<{max_url_len + 1}} Frequency: {count}")
                 else:
                     print(f"Word '{word}' not found in index.")
 
             elif command == "find":
-                positional, flags = parse_flags(args, {"--top": None}, {"--reverse"})
+                positional, flags = parse_flags(args, {"--top"}, {"--reverse"})
                 if flags is None:
                     continue
                 if not positional:
@@ -123,17 +126,17 @@ def main():
                     print("Error: Index not loaded. Please 'load' or 'build' first.")
                     continue
 
-                searcher = SearchEngine(indexer.index, indexer.doc_lengths)
+                searcher = SearchEngine(indexer.index, indexer.doc_lengths, indexer.id_to_url)
                 results = searcher.find(positional)
                 if flags["--reverse"]:
                     results.reverse()
 
                 if results:
-                    results = results[:flags["--top"]]
+                    results = results[:flags.get("--top")]
                     print(f"Showing top {len(results)} results:")
                     max_url_len = max(len(url) for url, _ in results)
                     for url, score in results:
-                        print(f" - {url:<{max_url_len}}  Relevance: {score}")
+                        print(f" - {url:<{max_url_len + 1}}  Relevance: {score}")
                 else:
                     print("No pages found for that query.")
                 
