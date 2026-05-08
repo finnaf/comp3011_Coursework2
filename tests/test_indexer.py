@@ -1,7 +1,6 @@
 import unittest
 import tempfile
 import os
-import json
 from src.indexer import Indexer
 
 class TestIndexer(unittest.TestCase):

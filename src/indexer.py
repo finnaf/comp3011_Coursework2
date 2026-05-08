@@ -3,12 +3,17 @@ import re
 import os
 
 class Indexer:
-    def __init__(self, storage_path="../data/index.json"):
+    def __init__(self, storage_path = None):
         self.url_vocab = {} # maps url to integer ids
         self.id_to_url = {}
         self.index = {}
         self.doc_lengths = {}
-        self.storage_path = storage_path
+
+        if storage_path is not None:
+            self.storage_path = storage_path
+        else:
+            BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+            self.storage_path  = os.path.join(BASE_DIR, "..", "data", "index.json")
 
     def _get_url_id(self, url):
         """Returns existing ID for a URL, or assigns a new one."""
