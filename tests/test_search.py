@@ -30,7 +30,7 @@ class TestSearchEngine(unittest.TestCase):
             2: 'https://example.com/c',
         }
         self.engine = SearchEngine(self.index, self.doc_lengths, self.id_to_url)
-
+        
     # --- find: basic behaviour ---
 
     def test_single_term_returns_matching_urls(self):

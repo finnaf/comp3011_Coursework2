@@ -59,6 +59,7 @@ def parse_flags(args, value_flags, bool_flags):
 def main():
     crawler = Crawler("https://quotes.toscrape.com/")
     indexer = Indexer()
+    searcher = SearchEngine()
 
     print("COMP3011 Coursework 2 - Web Crawler")
 
@@ -85,6 +86,7 @@ def main():
 
             elif command == "load":
                 if indexer.load():
+                    searcher.load(indexer.index, indexer.doc_lengths, indexer.id_to_url)
                     print("Index loaded successfully")
 
             elif command == "print":
@@ -115,11 +117,10 @@ def main():
                 if not positional:
                     print("Usage: find <word>")
                     continue
-                if not indexer.index:
+                if not indexer.index or not searcher.loaded:
                     print("Error: Index not loaded. Please 'load' or 'build' first.")
                     continue
 
-                searcher = SearchEngine(indexer.index, indexer.doc_lengths, indexer.id_to_url)
                 results = searcher.find(positional)
                 if flags["--reverse"]:
                     results.reverse()

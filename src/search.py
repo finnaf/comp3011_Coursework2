@@ -1,11 +1,16 @@
 import math
 
 class SearchEngine:
-    def __init__(self, index, doc_lengths, url_vocab):
+    def __init__(self, index: dict = {}, doc_lengths: dict = {}, url_vocab: dict = {}):
+        self.loaded = False
+        if index and doc_lengths and url_vocab:
+            self.load(index, doc_lengths, url_vocab)
+
+    def load(self, index: dict, doc_lengths: dict, url_vocab: dict):
         """
-        Initializes with the inverted index dictionary:
-        { "word": { "url1": count, "url2": count } }
+        Loads invertex index
         """
+        self.loaded = True
         self.index = index
         self.doc_lengths = doc_lengths # { url: total_word_count }
         self.url_vocab = url_vocab
