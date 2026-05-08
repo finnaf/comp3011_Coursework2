@@ -5,26 +5,31 @@ from src.search import SearchEngine
 class TestSearchEngine(unittest.TestCase):
 
     def setUp(self):
-        # small but realistic index for most tests
+        # Index uses integer URL IDs as keys, with lists of positions (len = frequency)
         self.index = {
             'foo': {
-                'https://example.com/a': 3,
-                'https://example.com/b': 1,
+                0: [0, 1, 2],   # 3 occurrences in doc 0
+                1: [0],          # 1 occurrence in doc 1
             },
             'bar': {
-                'https://example.com/a': 2,
-                'https://example.com/c': 1,
+                0: [3, 4],       # 2 occurrences in doc 0
+                2: [0],          # 1 occurrence in doc 2
             },
             'python': {
-                'https://example.com/b': 5,
+                1: [1, 2, 3, 4, 5],  # 5 occurrences in doc 1
             }
         }
         self.doc_lengths = {
-            'https://example.com/a': 10,
-            'https://example.com/b': 20,
-            'https://example.com/c': 5,
+            0: 10,
+            1: 20,
+            2: 5,
         }
-        self.engine = SearchEngine(self.index, self.doc_lengths)
+        self.id_to_url = {
+            0: 'https://example.com/a',
+            1: 'https://example.com/b',
+            2: 'https://example.com/c',
+        }
+        self.engine = SearchEngine(self.index, self.doc_lengths, self.id_to_url)
 
     # --- find: basic behaviour ---
 
@@ -91,7 +96,7 @@ class TestSearchEngine(unittest.TestCase):
         results = self.engine.find(['python'])
         self.assertEqual(len(results), 1)
 
-        url, score = results[0]
+        _, score = results[0]
         tf = 5 / 20                              # count / doc_length
         idf = math.log(3 / (1 + 1))             # total_docs / (1 + docs_with_term)
         expected = round(tf * idf, 4)
@@ -101,8 +106,9 @@ class TestSearchEngine(unittest.TestCase):
     def test_single_document_index(self):
         """Works correctly when index contains only one document"""
         engine = SearchEngine(
-            {'word': {'https://example.com/only': 1}},
-            {'https://example.com/only': 5}
+            {'word': {0: [0]}},
+            {0: 5},
+            {0: 'https://example.com/only'}
         )
         results = engine.find(['word'])
         self.assertEqual(len(results), 1)

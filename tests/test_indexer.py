@@ -21,15 +21,17 @@ class TestIndexer(unittest.TestCase):
         self.indexer.build_index([
             {'url': 'https://example.com/a', 'content': 'hello hello world'}
         ])
-        self.assertEqual(self.indexer.index['hello']['https://example.com/a'], 2)
-        self.assertEqual(self.indexer.index['world']['https://example.com/a'], 1)
+        uid = self.indexer.url_vocab['https://example.com/a']
+        self.assertEqual(len(self.indexer.index['hello'][uid]), 2)
+        self.assertEqual(len(self.indexer.index['world'][uid]), 1)
 
     def test_case_insensitive(self):
         """Indexing is case insensitive"""
         self.indexer.build_index([
             {'url': 'https://example.com/a', 'content': 'Hello HELLO hello'}
         ])
-        self.assertEqual(self.indexer.index['hello']['https://example.com/a'], 3)
+        uid = self.indexer.url_vocab['https://example.com/a']
+        self.assertEqual(len(self.indexer.index['hello'][uid]), 3)
 
     def test_punctuation_stripped(self):
         """Punctuation does not create separate index entries"""
@@ -45,16 +47,19 @@ class TestIndexer(unittest.TestCase):
             {'url': 'https://example.com/a', 'content': 'cat sat'},
             {'url': 'https://example.com/b', 'content': 'cat slept'},
         ])
-        self.assertIn('https://example.com/a', self.indexer.index['cat'])
-        self.assertIn('https://example.com/b', self.indexer.index['cat'])
-        self.assertNotIn('https://example.com/b', self.indexer.index['sat'])
+        uid_a = self.indexer.url_vocab['https://example.com/a']
+        uid_b = self.indexer.url_vocab['https://example.com/b']
+        self.assertIn(uid_a, self.indexer.index['cat'])
+        self.assertIn(uid_b, self.indexer.index['cat'])
+        self.assertNotIn(uid_b, self.indexer.index['sat'])
 
     def test_doc_lengths_recorded(self):
         """doc_lengths stores total word count per URL"""
         self.indexer.build_index([
             {'url': 'https://example.com/a', 'content': 'one two three'}
         ])
-        self.assertEqual(self.indexer.doc_lengths['https://example.com/a'], 3)
+        uid = self.indexer.url_vocab['https://example.com/a']
+        self.assertEqual(self.indexer.doc_lengths[uid], 3)
 
     def test_build_clears_previous_index(self):
         """Calling build_index twice does not accumulate stale data"""
