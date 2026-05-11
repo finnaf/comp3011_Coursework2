@@ -129,20 +129,20 @@ class TestCrawler(unittest.TestCase):
         self.assertIn("Some", entry["content"])
         self.assertIn("content", entry["content"])
 
-@patch('src.crawler.requests.get')
-def test_url_normalisation(self, mock_get):
-    """Verify that equivalent URLs are not crawled twice"""
-    no_links = MagicMock()
-    no_links.status_code = 200
-    no_links.raise_for_status = MagicMock()
-    no_links.text = '<p>no links</p>'
-    mock_get.return_value = no_links
+    @patch('src.crawler.requests.get')
+    def test_url_normalisation(self, mock_get):
+        """Verify that equivalent URLs are not crawled twice"""
+        no_links = MagicMock()
+        no_links.status_code = 200
+        no_links.raise_for_status = MagicMock()
+        no_links.text = '<p>no links</p>'
+        mock_get.return_value = no_links
 
-    self.crawler._visit_page("https://example.com/tag/books/")
-    self.crawler._visit_page("https://example.com/tag/books/page/1/")
-    self.crawler._visit_page("https://example.com/tag/books")
-    self.crawler._visit_page("https://example.com/tag/books?")
+        self.crawler._visit_page("https://example.com/tag/books/")
+        self.crawler._visit_page("https://example.com/tag/books/page/1/")
+        self.crawler._visit_page("https://example.com/tag/books")
+        self.crawler._visit_page("https://example.com/tag/books?")
 
-    # all four should be treated as the same page
-    mock_get.assert_called_once()
-    self.assertEqual(len(self.crawler.pages_data), 1)
+        # all four should be treated as the same page
+        mock_get.assert_called_once()
+        self.assertEqual(len(self.crawler.pages_data), 1)
