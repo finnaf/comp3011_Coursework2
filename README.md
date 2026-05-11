@@ -1,5 +1,8 @@
 # COMP3011 Search Engine Tool
 
+[![Tests](https://github.com/finnaf/comp3011_Coursework2/actions/workflows/test.yml/badge.svg)](https://github.com/finnaf/comp3011_Coursework2/actions/workflows/test.yml)
+[![Python](https://img.shields.io/badge/python-3.12-blue)](https://www.python.org/)
+
 A command-line search engine that crawls [quotes.toscrape.com](https://quotes.toscrape.com) in order to build an inverted index for querying.
 
 ## How It Works
