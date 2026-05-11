@@ -3,9 +3,6 @@ from indexer import Indexer
 from search import SearchEngine
 
 def print_help():
-    print("Commands: build, load, print <word>, find <query>, quit")
-
-def print_help():
     help_text = """
     Usage: [command] [arguments]
     Commands:
@@ -17,7 +14,7 @@ def print_help():
         quit            Exit the program
     Flags:
         --top <n>       Show only top n results (print/find)
-        --reverse       Reverses the sorting order (print/find)
+        --ascending     Reverses the sorting order (print/find)
     """
     print(help_text.strip())
 
@@ -82,6 +79,7 @@ def main():
                 
                 # create and save inverted index
                 indexer.build_index(pages_data)
+                searcher.load(indexer.index, indexer.doc_lengths, indexer.id_to_url)
                 print(f"Build complete. {len(pages_data)} pages indexed.")
 
             elif command == "load":
@@ -90,7 +88,7 @@ def main():
                     print("Index loaded successfully")
 
             elif command == "print":
-                positional, flags = parse_flags(args, {"--top"}, {"--reverse"})
+                positional, flags = parse_flags(args, {"--top"}, {"--ascending"})
                 if flags is None:
                     continue
                 if not positional:
@@ -101,7 +99,7 @@ def main():
                     continue
                 
                 word = positional[0].lower()
-                results = indexer.get_word_stats(word, flags["--reverse"], flags.get("--top"))
+                results = indexer.get_word_stats(word, flags["--ascending"], flags.get("--top"))
                 if results:
                     max_url_len = max(len(url) for url, _ in results)
                     for url, count in results:
@@ -111,7 +109,7 @@ def main():
                     
 
             elif command == "find":
-                positional, flags = parse_flags(args, {"--top"}, {"--reverse"})
+                positional, flags = parse_flags(args, {"--top"}, {"--ascending"})
                 if flags is None:
                     continue
                 if not positional:
@@ -122,7 +120,7 @@ def main():
                     continue
 
                 results = searcher.find(positional)
-                if flags["--reverse"]:
+                if flags["--ascending"]:
                     results.reverse()
 
                 if results:

@@ -1,7 +1,7 @@
 import math
 
 class SearchEngine:
-    def __init__(self, index: dict = {}, doc_lengths: dict = {}, url_vocab: dict = {}):
+    def __init__(self, index = None, doc_lengths = None, url_vocab = None):
         self.loaded = False
         if index and doc_lengths and url_vocab:
             self.load(index, doc_lengths, url_vocab)
@@ -47,7 +47,9 @@ class SearchEngine:
             for term in query_terms:
                 tf = len(self.index[term][url_id]) / self.doc_lengths[url_id]
                 docs_with_term = len(self.index[term])
-                idf = math.log(self.total_docs / (1 + docs_with_term))
+
+                # variant of idf so result cannot be negative
+                idf = math.log((1 + self.total_docs) / (1 + docs_with_term)) + 1
                 score += tf * idf
             url = self.url_vocab[url_id]
             ranked_results.append((url, round(score, 4)))

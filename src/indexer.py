@@ -5,7 +5,7 @@ import os
 class Indexer:
     def __init__(self, storage_path = None):
         self.url_vocab = {} # maps url to integer ids
-        self.id_to_url = {}
+        self.id_to_url = {} # maps ids to url
         self.index = {}
         self.doc_lengths = {}
 
@@ -83,7 +83,7 @@ class Indexer:
         print("Error: Index file not found. Run 'build' first.")
         return False
     
-    def get_word_stats(self, word, reverse=False, top=None):
+    def get_word_stats(self, word, ascending=False, top=None):
         """Returns a sorted list of (url, frequency) for a given word."""
         if word not in self.index:
             return None
@@ -92,5 +92,5 @@ class Indexer:
             (self.id_to_url[int(uid)], len(pos)) 
             for uid, pos in self.index[word].items()
         ]
-        stats.sort(key=lambda x: x[1], reverse=not reverse)
+        stats.sort(key=lambda x: x[1], reverse=not ascending)
         return stats[:top]
