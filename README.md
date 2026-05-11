@@ -1,16 +1,19 @@
 # COMP3011 Search Engine Tool
 
-A command-line search engine that crawls [quotes.toscrape.com](https://quotes.toscrape.com), builds an inverted index, and lets you query it.
+A command-line search engine that crawls [quotes.toscrape.com](https://quotes.toscrape.com) in order to build an inverted index for querying.
 
 ## How It Works
 
 The tool is split into three components:
 
-- **Crawler**: crawls the target website while respecting the `robots.txt` with a minimum 6-second politeness window
-- **Indexer**: builds an inverted index storing each word's positions across all pages, saved as JSON
-- **SearchEngine**: scores and ranks results using TF-IDF for relevance
+### Crawler
+Crawls the target website, respecting the `robots.txt` and a minimum 6-second politeness window between requests. URLs are normalised to a pattern consistent with [quotes.toscrape.com](https://quotes.toscrape.com), so the main page and [quotes.toscrape.com](https://quotes.toscrape.com/page/1/) are treated as one location.
 
----
+### Indexer
+Builds an inverted index, storing each word's positions across all pages and total page sizes as a JSON. Uses a URL vocabulary which reduces file size by more than 10 times.
+
+### Searcher
+Can query the collected data using two commands, which sort matching patterns by relevance using TF-IDF and frequency. Flags support the visualisation of data output.
 
 ## Installation
 
@@ -27,7 +30,6 @@ The tool is split into three components:
     source venv/bin/activate      # macOS/Linux
     venv\Scripts\activate         # Windows
     ```
----
 
 ### Dependencies
 
@@ -40,8 +42,6 @@ Install with:
 ```bash
 pip install -r requirements.txt
 ```
-
----
 
 ## Usage
 
@@ -65,10 +65,10 @@ Crawls the website, builds the inverted index, and saves it to `data/index.json`
 ```
 > build
 ```
-This will take several minutes due to the 6-second politeness window between requests.
+This will take several minutes due to the 6-second politeness window between requests. Use Ctrl+C to safely exit early.
 
 #### `load`
-Loads a previously built index from disk, ready for querying.
+Loads a previously built index from disk.
 ```
 > load
 ```
@@ -76,18 +76,18 @@ Loads a previously built index from disk, ready for querying.
 #### `print <word>`
 Shows every page containing a word, ordered by frequency (most frequent first).
 ```
-> print love
-> print life --top 5
-> print the --ascending
+> print foo
+> print bar --top 5
+> print friends --ascending
 ```
 
 #### `find <query>`
-Finds all pages containing **all** terms in the query, ranked by TF-IDF relevance.
+Finds all pages containing **all** terms in the query, ranked by TF-IDF relevance. Default behaviour prints in descending order.
 ```
-> find truth
-> find good friends
-> find life love --top 10
-> find books --ascending
+> find foo
+> find science great
+> find good friends --top 10
+> find good friends laugh together --ascending
 ```
 
 ### Flags
@@ -104,28 +104,24 @@ Finds all pages containing **all** terms in the query, ranked by TF-IDF relevanc
 | `help` | Show available commands |
 | `quit` / `exit` / `q` | Exit the program |
 
----
-
 ## Project Structure
 
 ```
 repository/
 ├── src/
-│   ├── crawler.py      # Web crawler with politeness and robots.txt support
-│   ├── indexer.py      # Inverted index builder and persistence
-│   ├── search.py       # TF-IDF search and ranking
-│   └── main.py         # CLI shell
+│   ├── crawler.py
+│   ├── indexer.py
+│   ├── search.py
+│   └── main.py
 ├── tests/
 │   ├── test_crawler.py
 │   ├── test_indexer.py
 │   └── test_search.py
 ├── data/
-│   └── index.json      # Generated index file (created by build)
+│   └── index.json
 ├── requirements.txt
 └── README.md
 ```
-
----
 
 ## Testing
 
