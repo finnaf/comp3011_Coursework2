@@ -3,7 +3,7 @@ import re
 import os
 
 class Indexer:
-    def __init__(self, storage_path = None):
+    def __init__(self, storage_path: str | None = None):
         self.urls = []
         self.url_to_id = {}
         self.index = {}
@@ -15,14 +15,14 @@ class Indexer:
             BASE_DIR = os.path.dirname(os.path.abspath(__file__))
             self.storage_path  = os.path.join(BASE_DIR, "..", "data", "index.json")
 
-    def _get_url_id(self, url):
+    def _get_url_id(self, url: str) -> int:
         if url not in self.url_to_id:
             uid = len(self.urls) # increments the id
             self.urls.append(url)
             self.url_to_id[url] = uid
         return self.url_to_id[url]
 
-    def build_index(self, pages_data):
+    def build_index(self, pages_data: list[dict[str, str]]) -> None:
         """
         Processes a list of {'url': ..., 'content': ...} and populates the index, saving URLs as integers
         """
@@ -48,7 +48,7 @@ class Indexer:
         
         self.save()
 
-    def save(self):
+    def save(self) -> None:
         """Saves the index as a JSON file"""
         os.makedirs(os.path.dirname(self.storage_path), exist_ok=True)
         with open(self.storage_path, 'w') as f:
@@ -59,7 +59,7 @@ class Indexer:
             }, f, indent=4)
         print(f"Index successfully saved to {self.storage_path}")
     
-    def load(self):
+    def load(self) -> bool:
         """Loads the index from the file system"""
         if os.path.exists(self.storage_path):
             with open(self.storage_path, 'r') as f:
@@ -81,7 +81,9 @@ class Indexer:
         print("Error: Index file not found. Run 'build' first.")
         return False
     
-    def get_word_stats(self, word, ascending=False, top=None):
+    def get_word_stats(self, word: str, 
+                        ascending: bool = False, top: int | None = None
+                        ) -> list[tuple[str, int]] | None:
         """Returns a sorted list of (url, frequency) for a given word."""
         if word not in self.index:
             return None

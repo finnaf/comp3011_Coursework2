@@ -1,12 +1,23 @@
 import math
 
+# type alias
+InvertedIndex = dict[str, dict[int, list[int]]]
+
 class SearchEngine:
-    def __init__(self, index = None, doc_lengths = None, url_vocab = None):
+    def __init__(self, 
+        index: InvertedIndex | None = None, 
+        doc_lengths: dict[int, int] | None = None, 
+        url_vocab: list[str] | None = None
+    ):
         self.loaded = False
         if index and doc_lengths and url_vocab:
             self.load(index, doc_lengths, url_vocab)
 
-    def load(self, index: dict, doc_lengths: dict, url_vocab: dict):
+    def load(self,
+            index: InvertedIndex,
+            doc_lengths: dict[int, int], 
+            url_vocab: list[str]
+        ) -> None:
         """
         Loads invertex index
         """
@@ -16,7 +27,7 @@ class SearchEngine:
         self.url_vocab = url_vocab
         self.total_docs = len(doc_lengths)
 
-    def find(self, query_terms):
+    def find(self, query_terms: list[str]) -> list[tuple[str, float]]:
         """
         Finds pages containing ALL terms in the query (Intersection).
         """

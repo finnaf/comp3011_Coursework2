@@ -4,14 +4,12 @@ import time, re
 from urllib import parse, robotparser
 
 class PoliteTimer:
-    def __init__(self, delay):
+    def __init__(self, delay: float):
         self.delay = delay # seconds
         self.last_request_time = 0
 
-    def wait(self):
-        '''
-        Stalls until the politeness window is over
-        '''
+    def wait(self) -> None:
+        '''Stalls until the politeness window is over'''
         elapsed = time.time() - self.last_request_time
 
         if elapsed < self.delay:
@@ -23,7 +21,7 @@ class PoliteTimer:
 
 
 class Crawler:
-    def __init__(self, base_url="https://quotes.toscrape.com/"):
+    def __init__(self, base_url: str = "https://quotes.toscrape.com/"):
         self.base_url = base_url
         self.visited = set()
         self.pages_data = []  # stores (url, text_content)
@@ -31,7 +29,7 @@ class Crawler:
         self.robot_parser = robotparser.RobotFileParser()
         self.base_netloc = parse.urlparse(base_url).netloc
 
-    def crawl(self):
+    def crawl(self) -> list[dict[str, str]]:
         """Starts crawling from the base URL"""
         self.visited = set()
         self.pages_data = []
@@ -44,7 +42,7 @@ class Crawler:
 
         return self.pages_data
     
-    def _normalise_url(self, url):
+    def _normalise_url(self, url: str) -> str:
         '''
         Standardise the URL\n
         URL normalisation should be handled differently for different websites, for https://quotes.toscrape.com:\n
@@ -68,7 +66,7 @@ class Crawler:
             ''    # fragment
         ))
 
-    def _visit_page(self, url):
+    def _visit_page(self, url: str) -> None:
         url = self._normalise_url(url)
         if url in self.visited or not self.robot_parser.can_fetch("*", url):
             return
@@ -104,7 +102,7 @@ class Crawler:
             # But keep it in self.visited so we don't infinitely retry a broken link
             return
 
-    def _parse_robots(self):
+    def _parse_robots(self) -> None:
         robots_url = parse.urljoin(self.base_url, "/robots.txt")
 
         try:

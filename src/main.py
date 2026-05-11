@@ -2,7 +2,7 @@ from crawler import Crawler
 from indexer import Indexer
 from search import SearchEngine
 
-def print_help():
+def print_help() -> None:
     help_text = """
     Usage: [command] [arguments]
     Commands:
@@ -18,7 +18,11 @@ def print_help():
     """
     print(help_text.strip())
 
-def parse_flags(args, value_flags, bool_flags):
+def parse_flags(
+        args: list[str], 
+        value_flags: set[str], 
+        bool_flags: set[str]
+    ) -> tuple[list[str] | None, dict[str, int | bool] | None]:
     """
     Separates positional args from flags.\n
     value flags take values, bool flags do not\n
@@ -53,7 +57,7 @@ def parse_flags(args, value_flags, bool_flags):
 
     return positional, flags
 
-def main():
+def main() -> None:
     crawler = Crawler("https://quotes.toscrape.com/")
     indexer = Indexer()
     searcher = SearchEngine()

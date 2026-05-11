@@ -5,12 +5,10 @@
 
 A command-line search engine that crawls [quotes.toscrape.com](https://quotes.toscrape.com) in order to build an inverted index for querying.
 
-## How It Works
-
-The tool is split into three components:
+The tool is split into three components.
 
 ### Crawler
-Crawls the target website, respecting the `robots.txt` and a minimum 6-second politeness window between requests. URLs are normalised to a pattern consistent with [quotes.toscrape.com](https://quotes.toscrape.com), so the main page and [quotes.toscrape.com](https://quotes.toscrape.com/page/1/) are treated as one location.
+Crawls the target website, respecting the `robots.txt` and a minimum 6-second politeness window between requests. URLs are normalised to a pattern consistent with [quotes.toscrape.com](https://quotes.toscrape.com), so the main page and [quotes.toscrape.com/page/1/](https://quotes.toscrape.com/page/1/) are treated as one location.
 
 ### Indexer
 Builds an inverted index, storing each word's positions across all pages and total page sizes as a JSON. Uses a URL vocabulary which reduces file size by more than 10 times.
