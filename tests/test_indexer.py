@@ -20,7 +20,7 @@ class TestIndexer(unittest.TestCase):
         self.indexer.build_index([
             {'url': 'https://example.com/a', 'content': 'hello hello world'}
         ])
-        uid = self.indexer.url_vocab['https://example.com/a']
+        uid = self.indexer.url_to_id['https://example.com/a']
         self.assertEqual(len(self.indexer.index['hello'][uid]), 2)
         self.assertEqual(len(self.indexer.index['world'][uid]), 1)
 
@@ -29,7 +29,7 @@ class TestIndexer(unittest.TestCase):
         self.indexer.build_index([
             {'url': 'https://example.com/a', 'content': 'Hello HELLO hello'}
         ])
-        uid = self.indexer.url_vocab['https://example.com/a']
+        uid = self.indexer.url_to_id['https://example.com/a']
         self.assertEqual(len(self.indexer.index['hello'][uid]), 3)
 
     def test_punctuation_stripped(self):
@@ -46,8 +46,8 @@ class TestIndexer(unittest.TestCase):
             {'url': 'https://example.com/a', 'content': 'cat sat'},
             {'url': 'https://example.com/b', 'content': 'cat slept'},
         ])
-        uid_a = self.indexer.url_vocab['https://example.com/a']
-        uid_b = self.indexer.url_vocab['https://example.com/b']
+        uid_a = self.indexer.url_to_id['https://example.com/a']
+        uid_b = self.indexer.url_to_id['https://example.com/b']
         self.assertIn(uid_a, self.indexer.index['cat'])
         self.assertIn(uid_b, self.indexer.index['cat'])
         self.assertNotIn(uid_b, self.indexer.index['sat'])
@@ -57,7 +57,7 @@ class TestIndexer(unittest.TestCase):
         self.indexer.build_index([
             {'url': 'https://example.com/a', 'content': 'one two three'}
         ])
-        uid = self.indexer.url_vocab['https://example.com/a']
+        uid = self.indexer.url_to_id['https://example.com/a']
         self.assertEqual(self.indexer.doc_lengths[uid], 3)
 
     def test_build_clears_previous_index(self):

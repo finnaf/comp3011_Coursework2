@@ -97,8 +97,8 @@ class TestSearchEngine(unittest.TestCase):
         self.assertEqual(len(results), 1)
 
         _, score = results[0]
-        tf = 5 / 20                              # count / doc_length
-        idf = math.log(3 / (1 + 1))             # total_docs / (1 + docs_with_term)
+        tf = 5 / 20 # count / doc_length
+        idf = math.log((3 + 1) / (1 + 1)) + 1 # (total_docs + 1) / (docs_with_term + 1)
         expected = round(tf * idf, 4)
         self.assertEqual(score, expected)
 
@@ -116,3 +116,23 @@ class TestSearchEngine(unittest.TestCase):
     def test_total_docs_is_correct(self):
         """total_docs reflects number of documents in doc_lengths"""
         self.assertEqual(self.engine.total_docs, 3)
+
+    def test_score_non_negative_for_common_term(self):
+        """Terms appearing in all documents should not produce negative scores.
+        
+        With idf = log(N / (1 + df)), when a term appears in every document,
+        N / (1 + df) < 1 and log returns a negative value, corrupting the score.
+        The fix is smoothed IDF: log(1 + N / (1 + df)).
+        """
+        engine = SearchEngine(
+            {'common': {0: [0], 1: [0], 2: [0]}},  # term in all 3 docs
+            {0: 10, 1: 10, 2: 10},
+            {0: 'https://example.com/a',
+            1: 'https://example.com/b',
+            2: 'https://example.com/c'}
+        )
+        results = engine.find(['common'])
+        self.assertTrue(len(results) > 0)
+        for _, score in results:
+            self.assertGreaterEqual(score, 0, 
+                f"Score {score} is negative, IDF penalising a universally common term")

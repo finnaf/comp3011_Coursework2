@@ -33,6 +33,8 @@ class Crawler:
 
     def crawl(self):
         """Starts crawling from the base URL"""
+        self.visited = set()
+        self.pages_data = []
         self._parse_robots()
 
         try:

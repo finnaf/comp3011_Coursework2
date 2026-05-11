@@ -4,8 +4,8 @@ import os
 
 class Indexer:
     def __init__(self, storage_path = None):
-        self.url_vocab = {} # maps url to integer ids
-        self.id_to_url = {} # maps ids to url
+        self.urls = []
+        self.url_to_id = {}
         self.index = {}
         self.doc_lengths = {}
 
@@ -16,19 +16,18 @@ class Indexer:
             self.storage_path  = os.path.join(BASE_DIR, "..", "data", "index.json")
 
     def _get_url_id(self, url):
-        """Returns existing ID for a URL, or assigns a new one."""
-        if url not in self.url_vocab:
-            uid = len(self.url_vocab)
-            self.url_vocab[url] = uid
-            self.id_to_url[uid] = url
-        return self.url_vocab[url]
+        if url not in self.url_to_id:
+            uid = len(self.urls) # increments the id
+            self.urls.append(url)
+            self.url_to_id[url] = uid
+        return self.url_to_id[url]
 
     def build_index(self, pages_data):
         """
         Processes a list of {'url': ..., 'content': ...} and populates the index, saving URLs as integers
         """
-        self.url_vocab = {}
-        self.id_to_url = {}
+        self.urls = []
+        self.url_to_id = {}
         self.index = {}
         self.doc_lengths = {}
         
@@ -52,11 +51,10 @@ class Indexer:
     def save(self):
         """Saves the index as a JSON file"""
         os.makedirs(os.path.dirname(self.storage_path), exist_ok=True)
-        id_to_url = {str(uid): url for url, uid in self.url_vocab.items()}
         with open(self.storage_path, 'w') as f:
             json.dump({
-                "url_vocab": id_to_url,
-                "index": self.index,
+                "urls": self.urls, 
+                "index": self.index, 
                 "doc_lengths": self.doc_lengths
             }, f, indent=4)
         print(f"Index successfully saved to {self.storage_path}")
@@ -67,9 +65,9 @@ class Indexer:
             with open(self.storage_path, 'r') as f:
                 data = json.load(f)
             
-            # reconstruct the vocabulary with integers
-            self.url_vocab = {url: int(uid) for uid, url in data["url_vocab"].items()}
-            self.id_to_url = {int(uid): url for uid, url in data["url_vocab"].items()}
+            # reconstruct the vocabulary
+            self.urls = data["urls"]
+            self.url_to_id = {url: i for i, url in enumerate(self.urls)}
             
             # convert doc_lengths keys back to integers
             self.doc_lengths = {int(uid): length for uid, length in data["doc_lengths"].items()}
@@ -89,7 +87,7 @@ class Indexer:
             return None
         
         stats = [
-            (self.id_to_url[int(uid)], len(pos)) 
+            (self.urls[int(uid)], len(pos)) 
             for uid, pos in self.index[word].items()
         ]
         stats.sort(key=lambda x: x[1], reverse=not ascending)

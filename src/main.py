@@ -79,12 +79,12 @@ def main():
                 
                 # create and save inverted index
                 indexer.build_index(pages_data)
-                searcher.load(indexer.index, indexer.doc_lengths, indexer.id_to_url)
+                searcher.load(indexer.index, indexer.doc_lengths, indexer.urls)
                 print(f"Build complete. {len(pages_data)} pages indexed.")
 
             elif command == "load":
                 if indexer.load():
-                    searcher.load(indexer.index, indexer.doc_lengths, indexer.id_to_url)
+                    searcher.load(indexer.index, indexer.doc_lengths, indexer.urls)
                     print("Index loaded successfully")
 
             elif command == "print":
