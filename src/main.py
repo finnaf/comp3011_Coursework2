@@ -114,7 +114,7 @@ def main() -> None:
                 positional, flags = parse_flags(args, {"--top"}, {"--ascending"})
                 if flags is None:
                     continue
-                if not positional:
+                if not positional or len(positional) > 1:
                     print("Usage: print <word>")
                     continue
                 if not indexer.index:
@@ -132,19 +132,17 @@ def main() -> None:
                     
 
             elif command == "find":
-                positional, flags = parse_flags(args, {"--top"}, {"--ascending"})
+                positional, flags = parse_flags(args, {"--top"}, {"--ascending", "--connected"})
                 if flags is None:
                     continue
                 if not positional:
-                    print("Usage: find <word>")
+                    print("Usage: find <phrase>")
                     continue
                 if not indexer.index or not searcher.loaded:
                     print("Error: Index not loaded. Please 'load' or 'build' first.")
                     continue
 
-                results = searcher.find(positional)
-                if flags["--ascending"]:
-                    results.reverse()
+                results = searcher.find(positional, flags["--connected"], flags["--ascending"])
 
                 if results:
                     results = results[:flags.get("--top")]

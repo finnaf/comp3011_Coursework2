@@ -27,7 +27,8 @@ class SearchEngine:
         self.url_vocab = url_vocab
         self.total_docs = len(doc_lengths)
 
-    def find(self, query_terms: list[str]) -> list[tuple[str, float]]:
+    def find(self, query_terms: list[str], 
+             is_connected: bool = False, is_ascending: bool = False) -> list[tuple[str, float]]:
         """
         Finds pages containing ALL terms in the query (Intersection).
         """
@@ -36,20 +37,17 @@ class SearchEngine:
 
         # index is lowercase
         query_terms = [term.lower() for term in query_terms]
-        
-        # set of URLs for the first word
-        first_word = query_terms[0]
-        if first_word not in self.index:
-            return []
-                
-        result_ids = set(self.index[first_word].keys())
-        
-        # intersect with URL sets of the remaining words
-        for term in query_terms[1:]:
-            if term in self.index:
-                result_ids &= set(self.index[term].keys())
-            else:
+        for term in query_terms:
+            if term not in self.index:
                 return []
+                
+        # intersect urls across all terms
+        result_ids = set(self.index[query_terms[0]].keys())
+        for term in query_terms[1:]:
+            result_ids &= set(self.index[term].keys())
+
+        if is_connected:
+            result_ids = self._filter_connected_phrases(query_terms, result_ids)
             
         # score each url with TF-IDF
         ranked_results = []
@@ -66,5 +64,24 @@ class SearchEngine:
             ranked_results.append((url, round(score, 4)))
 
         # highest first
-        ranked_results.sort(key=lambda x: x[1], reverse=True)
+        ranked_results.sort(key=lambda x: x[1], reverse=not is_ascending)
         return ranked_results
+    
+    def _filter_connected_phrases(self, query_terms: list[str], result_ids: set[int]) -> list[int]:
+        phrase_match_ids = []
+        for url_id in result_ids:
+            # start: candidate positions from the first term
+            candidate_starts = set(self.index[query_terms[0]][url_id])
+
+            for offset, term in enumerate(query_terms[1:], start=1):
+                term_positions = set(self.index[term][url_id])
+
+                # keep only starts where position + offset exists in next term
+                candidate_starts = {p for p in candidate_starts if p + offset in term_positions}
+                if not candidate_starts:
+                    break # skip url if no valid start
+
+            if candidate_starts:
+                phrase_match_ids.append(url_id)
+
+        return phrase_match_ids

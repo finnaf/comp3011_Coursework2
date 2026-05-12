@@ -97,6 +97,7 @@ Finds all pages containing **all** terms in the query, ranked by TF-IDF relevanc
 |---|---|---|
 | `--top <n>` | `print`, `find` | Limit output to top n results |
 | `--ascending` | `print`, `find` | Sort results lowest-first |
+| `--connected` | `find` | Searches for connected phrases |
 | `--verbose` | `build` | Prints extra debug information |
 | `--silent` | `build`, `load` | Silences output (other than errors) |
 
