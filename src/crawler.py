@@ -7,6 +7,7 @@ class PoliteTimer:
     def __init__(self, delay: float):
         self.delay = delay # seconds
         self.last_request_time = 0
+        self.do_print = False
 
     def wait(self) -> None:
         '''Stalls until the politeness window is over'''
@@ -14,7 +15,9 @@ class PoliteTimer:
 
         if elapsed < self.delay:
             wait_time = self.delay - elapsed
-            print(f"Stalling: {wait_time:.2f} seconds")
+
+            if (self.do_print):
+                print(f"Stalling: {wait_time:.2f} seconds")
             time.sleep(wait_time)
 
         self.last_request_time = time.time()
@@ -28,12 +31,22 @@ class Crawler:
         self.politeness_timer = PoliteTimer(6)
         self.robot_parser = robotparser.RobotFileParser()
         self.base_netloc = parse.urlparse(base_url).netloc
+        self.verbosity = 1
 
-    def crawl(self) -> list[dict[str, str]]:
-        """Starts crawling from the base URL"""
+    def crawl(self, verbosity_level: int) -> list[dict[str, str]]:
+        """
+        Starts crawling from the base URL\n
+        Verbosity: 0 (silent + errors), 1 (web pages), 2 (stalling)
+        """
+        self.verbosity = verbosity_level
+        self.politeness_timer.do_print = (self.verbosity >= 2)
+
         self.visited = set()
         self.pages_data = []
         self._parse_robots()
+
+        if self.verbosity > 0:
+            print(f"Building index of {self.base_url}")
 
         try:
             self._visit_page(self.base_url)
@@ -76,7 +89,8 @@ class Crawler:
         try:
             self.politeness_timer.wait()
             
-            print(f"Crawling: {url}")
+            if (self.verbosity >= 1):
+                print(f"Crawling: {url}")
             response = requests.get(url, timeout=10)
             response.raise_for_status()
             

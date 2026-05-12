@@ -15,6 +15,8 @@ def print_help() -> None:
     Flags:
         --top <n>       Show only top n results (print/find)
         --ascending     Reverses the sorting order (print/find)
+        --verbose       Shows wait times during crawl (build)
+        --silent        Silences all output bar errors (build/load)
     """
     print(help_text.strip())
 
@@ -57,6 +59,14 @@ def parse_flags(
 
     return positional, flags
 
+def calculate_verbosity_level(is_verbose: bool, is_silent: bool) -> int:
+    '''Can have both flags. Silencing overrides.'''
+    if is_silent:
+        return 0
+    elif is_verbose:
+        return 2
+    return 1
+
 def main() -> None:
     crawler = Crawler("https://quotes.toscrape.com/")
     indexer = Indexer()
@@ -74,22 +84,31 @@ def main() -> None:
             args = user_input[1:]
 
             if command == "build":
-                _, flags = parse_flags(args, {}, {})
+                _, flags = parse_flags(args, {}, {"--verbose", "--silence"})
                 if flags is None: # error in parsing
                     continue
 
-                print(f"Building index of {crawler.base_url}")
-                pages_data = crawler.crawl()
+                verbosity = calculate_verbosity_level(flags["--verbose"], flags["--silence"])
+                pages_data = crawler.crawl(verbosity)
                 
                 # create and save inverted index
                 indexer.build_index(pages_data)
                 searcher.load(indexer.index, indexer.doc_lengths, indexer.urls)
-                print(f"Build complete. {len(pages_data)} pages indexed.")
+                
+                if verbosity > 0:
+                    print(f"Build complete. {len(pages_data)} pages indexed.")
 
             elif command == "load":
+                _, flags = parse_flags(args, {}, {"--silence"})
+                if flags is None:
+                    continue
+                verbosity = calculate_verbosity_level(False, flags["--silence"])
+
                 if indexer.load():
                     searcher.load(indexer.index, indexer.doc_lengths, indexer.urls)
-                    print("Index loaded successfully")
+
+                    if verbosity > 0:
+                        print(f"Index loaded successfully, {len(indexer.index)} unique words over {len(indexer.urls)} unique webpages")
 
             elif command == "print":
                 positional, flags = parse_flags(args, {"--top"}, {"--ascending"})
@@ -135,6 +154,11 @@ def main() -> None:
                         print(f" - {url:<{max_url_len + 1}}  Relevance: {score}")
                 else:
                     print("No pages found for that query.")
+
+            elif command == "words":
+                with open("words.txt", "w", encoding="utf-8") as f:
+                    for term in sorted(indexer.index.keys()):
+                        f.write(term + "\n")
                 
             elif command == "quit" or command == "exit" or command == "q":
                 print("Exiting search tool")

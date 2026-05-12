@@ -8,7 +8,7 @@ A command-line search engine that crawls [quotes.toscrape.com](https://quotes.to
 The tool is split into three components.
 
 ### Crawler
-Crawls the target website, respecting the `robots.txt` and a minimum 6-second politeness window between requests. URLs are normalised to a pattern consistent with [quotes.toscrape.com](https://quotes.toscrape.com), so the main page and [quotes.toscrape.com/page/1/](https://quotes.toscrape.com/page/1/) are treated as one location.
+Crawls the target website, respecting the `robots.txt` and a minimum 6-second politeness window between requests. URLs are normalised to a pattern consistent with [quotes.toscrape.com](https://quotes.toscrape.com), so for example, the main page and [quotes.toscrape.com/page/1/](https://quotes.toscrape.com/page/1/) are treated as the same location.
 
 ### Indexer
 Builds an inverted index, storing each word's positions across all pages and total page sizes as a JSON. Uses a URL vocabulary which reduces file size by more than 10 times.
@@ -97,6 +97,8 @@ Finds all pages containing **all** terms in the query, ranked by TF-IDF relevanc
 |---|---|---|
 | `--top <n>` | `print`, `find` | Limit output to top n results |
 | `--ascending` | `print`, `find` | Sort results lowest-first |
+| `--verbose` | `build` | Prints extra debug information |
+| `--silent` | `build`, `load` | Silences output (other than errors) |
 
 ### Other Commands
 
