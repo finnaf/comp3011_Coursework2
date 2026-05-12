@@ -108,7 +108,7 @@ def main() -> None:
                     searcher.load(indexer.index, indexer.doc_lengths, indexer.urls)
 
                     if verbosity > 0:
-                        print(f"Index loaded successfully, {len(indexer.index)} unique words over {len(indexer.urls)} unique webpages")
+                        print(f"Index loaded successfully, {len(indexer.index)} unique words over {len(indexer.urls)} webpages")
 
             elif command == "print":
                 positional, flags = parse_flags(args, {"--top"}, {"--ascending"})
@@ -154,11 +154,6 @@ def main() -> None:
                         print(f" - {url:<{max_url_len + 1}}  Relevance: {score}")
                 else:
                     print("No pages found for that query.")
-
-            elif command == "words":
-                with open("words.txt", "w", encoding="utf-8") as f:
-                    for term in sorted(indexer.index.keys()):
-                        f.write(term + "\n")
                 
             elif command == "quit" or command == "exit" or command == "q":
                 print("Exiting search tool")
