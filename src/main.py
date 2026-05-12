@@ -4,7 +4,7 @@ from search import SearchEngine
 
 def print_help() -> None:
     help_text = """
-    Usage: [command] [arguments]
+    Usage: [command] [arguments] [flags]
     Commands:
         build           Crawl the base URL and build the inverted index
         load            Load an existing index from disk
@@ -15,8 +15,10 @@ def print_help() -> None:
     Flags:
         --top <n>       Show only top n results (print/find)
         --ascending     Reverses the sorting order (print/find)
+        --connected     Only returns consecutive words (find)
+        --from <path>   Load index from a given file, default=index.json (load)
         --verbose       Shows wait times during crawl (build)
-        --silent        Silences all output bar errors (build/load)
+        --silent        Silences all output other than errors (build/load)
     """
     print(help_text.strip())
 
@@ -46,11 +48,12 @@ def parse_flags(
             if i + 1 >= len(args):
                 print(f"Error: Flag '{flag}' requires a value.")
                 return None, None
+            
+            value = args[i + 1]
             try:
-                flags[flag] = int(args[i + 1])
-            except ValueError:
-                print(f"Error: Flag '{flag}' expects an integer, got '{args[i + 1]}'.")
-                return None, None
+                flags[flag] = int(value)
+            except (ValueError, TypeError):
+                flags[flag] = value
             i += 2
         else:
             # is a regular argument
@@ -84,11 +87,11 @@ def main() -> None:
             args = user_input[1:]
 
             if command == "build":
-                _, flags = parse_flags(args, {}, {"--verbose", "--silence"})
+                _, flags = parse_flags(args, {}, {"--verbose", "--silent"})
                 if flags is None: # error in parsing
                     continue
 
-                verbosity = calculate_verbosity_level(flags["--verbose"], flags["--silence"])
+                verbosity = calculate_verbosity_level(flags["--verbose"], flags["--silent"])
                 pages_data = crawler.crawl(verbosity)
                 
                 # create and save inverted index
@@ -99,12 +102,12 @@ def main() -> None:
                     print(f"Build complete. {len(pages_data)} pages indexed.")
 
             elif command == "load":
-                _, flags = parse_flags(args, {}, {"--silence"})
+                _, flags = parse_flags(args, {"--from"}, {"--silent"})
                 if flags is None:
                     continue
-                verbosity = calculate_verbosity_level(False, flags["--silence"])
+                verbosity = calculate_verbosity_level(False, flags["--silent"])
 
-                if indexer.load():
+                if indexer.load(flags.get("--from")):
                     searcher.load(indexer.index, indexer.doc_lengths, indexer.urls)
 
                     if verbosity > 0:

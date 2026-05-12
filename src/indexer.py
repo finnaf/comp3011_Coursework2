@@ -59,10 +59,11 @@ class Indexer:
             }, f, indent=4)
         print(f"Index successfully saved to {self.storage_path}")
     
-    def load(self) -> bool:
+    def load(self, path: str | None = None) -> bool:
         """Loads the index from the file system"""
-        if os.path.exists(self.storage_path):
-            with open(self.storage_path, 'r') as f:
+        target = path if path is not None else self.storage_path
+        if os.path.exists(target):
+            with open(target, 'r') as f:
                 data = json.load(f)
             
             # reconstruct the vocabulary
@@ -78,7 +79,7 @@ class Indexer:
                 
             return True
         
-        print("Error: Index file not found. Run 'build' first.")
+        print(f"Error: Index file not found at '{target}'. Run 'build' first.")
         return False
     
     def get_word_stats(self, word: str, 
