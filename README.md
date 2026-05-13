@@ -44,6 +44,11 @@ Run `main.py` from any directory as a python file
 python src/main.py
 ```
 
+Or as a package
+```bash
+python -m src.main
+```
+
 This opens an interactive shell:
 
 ```
@@ -80,7 +85,7 @@ Finds all pages containing **all** terms in the query, ranked by TF-IDF relevanc
 > find foo
 > find science great
 > find good friends --top 10
-> find good friends laugh together --ascending
+> find the fear of death --connected
 ```
 
 ### Flags
@@ -116,27 +121,8 @@ pip install pytest-cov
 python -m pytest tests/ --cov=src --cov-report=term-missing
 ```
 
-Current coverage focuses on the core search engine functionality and data-processing logic. The crawler, indexer and search engine have 100% coverage, and contained functions within `main.py` are also tested. Printing logic and the main control flow was omitted from unit testing.
+Current coverage focuses on the core search engine functionality and data-processing logic. The crawler, indexer and search engine have 100% coverage, and contained functions within `main.py` are also tested. Printing logic and the main control flow was omitted from unit testing, so overall coverage is 73%.
 
 ### Running CI tests
 
 Tests are automatically executed on every push and pull request using GitHub Actions.
-
-## Project Structure
-
-```
-repository/
-├── src/
-│   ├── crawler.py
-│   ├── indexer.py
-│   ├── search.py
-│   └── main.py
-├── tests/
-│   ├── test_crawler.py
-│   ├── test_indexer.py
-│   └── test_search.py
-├── data/
-│   └── index.json
-├── requirements.txt
-└── README.md
-```
