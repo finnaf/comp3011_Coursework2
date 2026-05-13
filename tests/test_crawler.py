@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from src.crawler import Crawler
+from src.crawler import Crawler, PoliteTimer
 import requests
 
 class TestCrawler(unittest.TestCase):
@@ -14,8 +14,10 @@ class TestCrawler(unittest.TestCase):
         # defaults for all tests
         self.crawler.robot_parser = MagicMock()
         self.crawler.robot_parser.can_fetch.return_value = True # every page allowed
+        self.crawler.robot_parser.crawl_delay.return_value = None
         self.crawler.politeness_timer.wait = MagicMock() # skip stall func
 
+    # robots
     @patch('src.crawler.requests.get')
     def test_robots_exclusion(self, mock_get):
         """Verify the crawler respects Disallow rules from robots.txt"""
@@ -27,6 +29,34 @@ class TestCrawler(unittest.TestCase):
         self.assertNotIn("https://example.com/private", self.crawler.visited)
         self.assertEqual(len(self.crawler.pages_data), 0)
         mock_get.assert_not_called()
+
+    def test_parse_robots_applies_delay_above_threshold(self):
+        """Verify _parse_robots() raises the politeness delay when robots.txt specifies > 6 s"""
+        self.crawler.robot_parser.crawl_delay.return_value = 10
+ 
+        self.crawler._parse_robots()
+ 
+        self.assertEqual(self.crawler.politeness_timer.delay, 10)
+
+    def test_parse_robots_keeps_default_delay_when_below_threshold(self):
+        """Verify _parse_robots() leaves the delay unchanged when robots.txt value <= 6"""
+        self.crawler.robot_parser.crawl_delay.return_value = 3
+ 
+        self.crawler._parse_robots()
+ 
+        self.assertEqual(self.crawler.politeness_timer.delay, 6)
+
+    def test_parse_robots_handles_read_exception_gracefully(self):
+        """Verify _parse_robots() logs but does not propagate a robots.txt fetch error"""
+        self.crawler.robot_parser.read.side_effect = Exception("Network error")
+ 
+        with patch('builtins.print') as mock_print:
+            self.crawler._parse_robots()   # must not raise
+ 
+        mock_print.assert_called_once()
+        self.assertIn('robots.txt', mock_print.call_args[0][0])
+
+
 
     @patch('src.crawler.requests.get')
     def test_link_extraction(self, mock_get):
@@ -146,3 +176,134 @@ class TestCrawler(unittest.TestCase):
         # all four should be treated as the same page
         mock_get.assert_called_once()
         self.assertEqual(len(self.crawler.pages_data), 1)
+
+    def _no_links_response(self):
+        r = MagicMock()
+        r.status_code = 200
+        r.text = '<p>no links</p>'
+        r.raise_for_status = MagicMock()
+        return r
+    
+    # resetting logic
+
+    @patch('src.crawler.requests.get')
+    def test_crawl_resets_state_on_each_call(self, mock_get):
+        """Verify crawl() discards stale visited/pages_data from a previous run"""
+        mock_get.return_value = self._no_links_response()
+ 
+        # Inject stale state
+        self.crawler.visited = {'https://stale.com/'}
+        self.crawler.pages_data = [{'url': 'https://stale.com/', 'content': 'old'}]
+ 
+        self.crawler.crawl(0)
+ 
+        self.assertNotIn('https://stale.com/', self.crawler.visited)
+        self.assertEqual(len(self.crawler.pages_data), 1)
+        self.assertEqual(self.crawler.pages_data[0]['url'], 'https://example.com/')
+
+    
+    def test_crawl_handles_keyboard_interrupt_gracefully(self):
+        """Verify a KeyboardInterrupt during crawl is caught and partial results returned"""
+        self.crawler._visit_page = MagicMock(side_effect=KeyboardInterrupt)
+ 
+        with patch('builtins.print'):
+            result = self.crawler.crawl(0)
+ 
+        # Must return a list (even if empty) rather than propagating the exception
+        self.assertIsInstance(result, list)
+
+    # verbosity checks
+
+    @patch('src.crawler.requests.get')
+    def test_crawl_verbosity_zero_produces_no_output(self, mock_get):
+        """Verify verbosity=0 suppresses all print statements"""
+        mock_get.return_value = self._no_links_response()
+ 
+        with patch('builtins.print') as mock_print:
+            self.crawler.crawl(0)
+            mock_print.assert_not_called()
+ 
+    @patch('src.crawler.requests.get')
+    def test_crawl_verbosity_one_prints_base_url(self, mock_get):
+        """Verify verbosity=1 prints a header line containing the base URL"""
+        mock_get.return_value = self._no_links_response()
+ 
+        with patch('builtins.print') as mock_print:
+            self.crawler.crawl(1)
+ 
+        all_output = ' '.join(str(c) for c in mock_print.call_args_list)
+        self.assertIn('example.com', all_output)
+ 
+    @patch('src.crawler.requests.get')
+    def test_crawl_verbosity_two_enables_timer_printing(self, mock_get):
+        """Verify verbosity=2 sets do_print on the politeness timer"""
+        mock_get.return_value = self._no_links_response()
+ 
+        self.crawler.crawl(2)
+ 
+        self.assertTrue(self.crawler.politeness_timer.do_print)
+ 
+    @patch('src.crawler.requests.get')
+    def test_crawl_verbosity_one_disables_timer_printing(self, mock_get):
+        """Verify verbosity=1 does not enable timer stall messages"""
+        mock_get.return_value = self._no_links_response()
+ 
+        self.crawler.crawl(1)
+ 
+        self.assertFalse(self.crawler.politeness_timer.do_print)
+
+
+
+class TestPoliteTimer(unittest.TestCase):
+    @patch('src.crawler.time.sleep')
+    @patch('src.crawler.time.time')
+    def test_wait_sleeps_for_remaining_window(self, mock_time, mock_sleep):
+        """Verify wait() sleeps for the time remaining in the delay window"""
+        timer = PoliteTimer(6)
+        timer.last_request_time = 100.0
+        # First call returns current time (2 s elapsed), second records new last_request_time
+        mock_time.side_effect = [102.0, 102.0]
+ 
+        timer.wait()
+ 
+        mock_sleep.assert_called_once()
+        self.assertAlmostEqual(mock_sleep.call_args[0][0], 4.0, places=5)
+ 
+    @patch('src.crawler.time.sleep')
+    @patch('src.crawler.time.time')
+    def test_wait_skips_sleep_after_delay_elapsed(self, mock_time, mock_sleep):
+        """Verify wait() does not sleep when the full delay has already passed"""
+        timer = PoliteTimer(6)
+        timer.last_request_time = 100.0
+        mock_time.return_value = 110.0  # 10 s elapsed > 6 s delay
+ 
+        timer.wait()
+ 
+        mock_sleep.assert_not_called()
+ 
+    @patch('src.crawler.time.sleep')
+    @patch('src.crawler.time.time')
+    def test_wait_prints_stall_message_when_verbose(self, mock_time, mock_sleep):
+        """Verify wait() prints a stalling notice when do_print is True"""
+        timer = PoliteTimer(6)
+        timer.do_print = True
+        timer.last_request_time = 100.0
+        mock_time.side_effect = [102.0, 102.0]
+ 
+        with patch('builtins.print') as mock_print:
+            timer.wait()
+            mock_print.assert_called_once()
+            self.assertIn("Stalling", mock_print.call_args[0][0])
+ 
+    @patch('src.crawler.time.sleep')
+    @patch('src.crawler.time.time')
+    def test_wait_does_not_print_when_not_verbose(self, mock_time, mock_sleep):
+        """Verify wait() stays silent when do_print is False"""
+        timer = PoliteTimer(6)
+        timer.do_print = False
+        timer.last_request_time = 100.0
+        mock_time.side_effect = [102.0, 102.0]
+ 
+        with patch('builtins.print') as mock_print:
+            timer.wait()
+            mock_print.assert_not_called()
