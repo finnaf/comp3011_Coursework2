@@ -129,8 +129,3 @@ class Crawler:
 
         except Exception as e:
             print(f"Could not parse robots.txt: {e}")
-
-if __name__ == "__main__":
-    crawler = Crawler()
-    results = crawler.crawl()
-    print(f"Crawl complete. Total pages found: {len(results)}")
