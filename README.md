@@ -23,26 +23,18 @@ Can query the collected data using two commands, which sort matching patterns by
 1. Clone the repository:
     ```bash
     git clone https://github.com/finnaf/comp3011_Coursework2
+    cd comp3011_Coursework2
     ```
 
-2. (Recommended) Create a virtual environment:
-    ```bash
-    python -m venv venv
-    source venv/bin/activate      # macOS/Linux
-    venv\Scripts\activate         # Windows
-    ```
-
-### Dependencies
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
 | Package | Purpose |
 |---|---|
 | `requests` | HTTP requests during crawling |
 | `beautifulsoup4` | HTML parsing |
-
-Install with:
-```bash
-pip install -r requirements.txt
-```
 
 ## Usage
 
@@ -62,7 +54,7 @@ COMP3011 Coursework 2 - Web Crawler
 ### Commands
 
 #### `build`
-Crawls the website, builds the inverted index, and saves it to `data/index.json`.
+Crawls [quotes.toscrape.com](https://quotes.toscrape.com), builds the inverted index, and saves it to `data/index.json`.
 ```
 > build
 ```
@@ -98,6 +90,7 @@ Finds all pages containing **all** terms in the query, ranked by TF-IDF relevanc
 | `--top <n>` | `print`, `find` | Limit output to top n results |
 | `--ascending` | `print`, `find` | Sort results lowest-first |
 | `--connected` | `find` | Searches for connected phrases |
+| `--from <path>` | `load` | Load index from a given path |
 | `--verbose` | `build` | Prints extra debug information |
 | `--silent` | `build`, `load` | Silences output (other than errors) |
 
@@ -107,6 +100,27 @@ Finds all pages containing **all** terms in the query, ranked by TF-IDF relevanc
 |---|---|
 | `help` | Show available commands |
 | `quit` / `exit` / `q` | Exit the program |
+
+## Testing
+
+Run the full test suite from the project root:
+
+```bash
+python -m pytest tests/
+```
+
+To generate a coverage report:
+
+```bash
+pip install pytest-cov
+python -m pytest tests/ --cov=src --cov-report=term-missing
+```
+
+Current coverage focuses on the core search engine functionality and data-processing logic. The crawler, indexer and search engine have 100% coverage, and contained functions within `main.py` are also tested. Printing logic and the main control flow was omitted from unit testing.
+
+### Running CI tests
+
+Tests are automatically executed on every push and pull request using GitHub Actions.
 
 ## Project Structure
 
@@ -126,24 +140,3 @@ repository/
 ├── requirements.txt
 └── README.md
 ```
-
-## Testing
-
-Run the full test suite from the project root:
-
-```bash
-python -m pytest tests/
-```
-
-To see test coverage:
-
-```bash
-pip install pytest-cov
-python -m pytest tests/ --cov=src --cov-report=term-missing
-```
-
-Tests cover:
-- Crawler URL normalisation, politeness timing, and robots.txt handling
-- Indexer build, save, load, and word statistics
-- Search engine intersection logic and TF-IDF ranking
-- Edge cases: unknown words, empty queries, single-page results

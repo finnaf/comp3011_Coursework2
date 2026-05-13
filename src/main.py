@@ -1,6 +1,12 @@
-from crawler import Crawler
-from indexer import Indexer
-from search import SearchEngine
+# can run as a regular python file or as a package
+try:
+    from .crawler import Crawler
+    from .indexer import Indexer
+    from .search import SearchEngine
+except ImportError:
+    from crawler import Crawler
+    from indexer import Indexer
+    from search import SearchEngine
 
 def print_help() -> None:
     help_text = """
