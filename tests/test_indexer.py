@@ -100,3 +100,66 @@ class TestIndexer(unittest.TestCase):
         self.assertFalse(result)
         # recreate so tearDown doesn't fail on unlink
         open(self.tmp.name, 'w').close()
+
+
+    # get_word_stats testing
+
+    def test_get_word_stats_returns_none_for_unknown_word(self):
+        """Returns None when the word has never been indexed"""
+        self.indexer.build_index([
+            {'url': 'https://example.com/a', 'content': 'hello world'}
+        ])
+        self.assertIsNone(self.indexer.get_word_stats('banana'))
+
+    def test_get_word_stats_frequency_and_url(self):
+        """Returns correct (url, frequency) pairs"""
+        self.indexer.build_index([
+            {'url': 'https://example.com/a', 'content': 'cat cat cat'},
+            {'url': 'https://example.com/b', 'content': 'cat'},
+        ])
+        stats = self.indexer.get_word_stats('cat')
+        url_to_freq = dict(stats)
+        self.assertEqual(url_to_freq['https://example.com/a'], 3)
+        self.assertEqual(url_to_freq['https://example.com/b'], 1)
+
+    def test_get_word_stats_default_sort_is_descending(self):
+        """Default sort puts highest frequency first"""
+        self.indexer.build_index([
+            {'url': 'https://example.com/a', 'content': 'cat'},
+            {'url': 'https://example.com/b', 'content': 'cat cat cat'},
+        ])
+        stats = self.indexer.get_word_stats('cat')
+        self.assertEqual(stats[0], ('https://example.com/b', 3))
+        self.assertEqual(stats[1], ('https://example.com/a', 1))
+
+    def test_get_word_stats_ascending(self):
+        """ascending=True puts lowest frequency first"""
+        self.indexer.build_index([
+            {'url': 'https://example.com/a', 'content': 'cat'},
+            {'url': 'https://example.com/b', 'content': 'cat cat cat'},
+        ])
+        stats = self.indexer.get_word_stats('cat', ascending=True)
+        self.assertEqual(stats[0], ('https://example.com/a', 1))
+
+    def test_get_word_stats_top_limits_results(self):
+        """top=N returns at most N results"""
+        self.indexer.build_index([
+            {'url': f'https://example.com/{i}', 'content': 'cat ' * (i + 1)}
+            for i in range(5)
+        ])
+        stats = self.indexer.get_word_stats('cat', top=2)
+        self.assertEqual(len(stats), 2)
+
+    def test_get_word_stats_single_url(self):
+        """Works correctly with only one URL in the index"""
+        self.indexer.build_index([
+            {'url': 'https://example.com/a', 'content': 'dog dog'}
+        ])
+        stats = self.indexer.get_word_stats('dog')
+        self.assertEqual(stats, [('https://example.com/a', 2)])
+
+    # for full test coverage
+    def test_default_storage_path_is_set(self):
+        """Indexer sets a default storage path when none is provided"""
+        indexer = Indexer()
+        self.assertTrue(indexer.storage_path.endswith('index.json'))
